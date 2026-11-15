@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>So what. — Haley Maes</title>
+  <meta name="description" content="How code is used on each problem. A repeatable check that says what looked wrong, what you compared, what you concluded, and whether a retry is allowed. Synthetic data.">
+  <link rel="stylesheet" href="styles.css?v=4">
+</head>
+<body>
+  <div class="sheet">
+    <header class="mast">
+      <a class="name" href="index.html">Haley Maes</a>
+      <nav aria-label="Sections">
+        <a href="index.html">Portfolio</a>
+        <a href="payment-exceptions.html">Reconciliation</a>
+        <a href="choice-ops.html">Disbursements</a>
+        <a href="patterns.html">Toolkit</a>
+        <a href="problems.html">Playbook</a>
+        <a href="so-what.html">So what</a>
+      </nav>
+      <p>Technical operations</p>
+    </header>
+
+    <main class="case">
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>How code is used on each problem.</p>
+      <h1 class="question">So what.</h1>
+      <p class="lede">The point of the code is not the script. It is a repeatable check that says what looked wrong, what you compared, what you concluded, and whether a retry is allowed. The data is synthetic: I work in dental billing, and these are practice projects for a technical operations role.</p>
+
+      <section class="pattern" id="payment-failure">
+        <p class="idx">[01]</p>
+        <h3>Payment Failure Investigation</h3>
+        <p>Does the ledger agree with the last event for this id?</p>
+        <p>The break is one payment id whose ledger status and event log do not say the same thing.</p>
+        <p>SQL puts those two records side by side on one key. <a href="patterns/investigate/sql/query.sql">The investigate query</a> returns the ledger row and the event rows for the same <code>entity_id</code>, in time order. On the disbursement ledger, <a href="choice-ops/sql/disbursements.sql">the named queries</a> load one disbursement by <code>disbursement_id</code>, the other rows that share its idempotency key, the other rows that share its trace number, and the events for that same id. The dental exception view compares a payment attempt with a posted payment on the same attempt id, and with posted payments that already use that idempotency key.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/patterns/investigate/python/run.py"><code>patterns/investigate/python/run.py</code></a> prints the mismatch in one sentence and does not update either side. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> prints the timeline and a cause label. It does not retry. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/investigate.py"><code>investigate.py</code></a> prints the dental exception queue and writes <code>exception_queue.csv</code>. It does not change payments.</p>
+        <p>So what: you read that sentence before you pick an action, and you leave the payment unchanged until a later script says a retry is allowed.</p>
+        <p><a href="patterns.html#investigate">Toolkit</a> · <a href="choice-ops.html">Disbursements</a> · <a href="payment-exceptions.html">Reconciliation</a></p>
+      </section>
+
+      <section class="pattern band" id="duplicate-after-timeout">
+        <p class="idx">[02]</p>
+        <h3>Duplicate Payment Risk After a Timeout</h3>
+        <p>Did this disbursement already move, or is it safe to send again?</p>
+        <p>The break is a timeout that looks like a failure while the same idempotency key is already settled on another row.</p>
+        <p>SQL compares the failed attempt with every other record that carries that key. The disbursement query returns every row with the same idempotency key. The dental view compares the attempt with <code>posted_payments</code> on that key. The repair query flags a failed attempt when a posted payment with that key is already settled.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks the row as <code>idempotency_already_settled</code> when another row on the key is settled or posted. It plans a retry only when the amount matches, there is no return, and no settled row uses the key. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> blocks <code>status_failed_but_settled</code> and blocks a retry whose key is already posted. If the SQL view marks a row safe and the key is already posted, the script refuses to write the plan. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/patterns/repair/python/run.py"><code>patterns/repair/python/run.py</code></a> refuses the settled key and plans the open key. <code>--execute</code> writes a plan row, not a payment.</p>
+        <p>So what: do not resend a key that is already posted.</p>
+        <p><a href="choice-ops.html">Disbursements</a> · <a href="payment-exceptions.html">Reconciliation</a> · <a href="patterns.html#repair">Toolkit</a></p>
+      </section>
+
+      <section class="pattern" id="batch-rejected">
+        <p class="idx">[03]</p>
+        <h3>Rejected Batch Investigation</h3>
+        <p>Was this row rejected for bad data, or can it be sent again?</p>
+        <p>The break is a batch row the file rejected before it went out, so sending the same file again rejects it again.</p>
+        <p>SQL loads the disbursement and the events for that <code>disbursement_id</code>. The reconcile query selects settled disbursements for one client whose trace number is present, and the script compares those rows with the client CSV on the same trace, after it checks the file header against the expected columns.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> labels the row <code>batch_rejected</code> when the status is rejected, or an event is <code>batch.reject</code>, or the code is <code>BATCH_REJECT</code>. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> labels <code>BATCH_REJECT</code> as fix the recipient and does not build a new file. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks a rejected status as <code>fix_before_retry</code>. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a> reports matched, missing from the batch, in the file but never settled, amount mismatch, and duplicate trace. It does not repair fields.</p>
+        <p>So what: you fix the recipient data that caused the reject, and you leave the rejected row off the retry plan.</p>
+        <p><a href="choice-ops.html">Disbursements</a></p>
+      </section>
+
+      <section class="pattern band" id="integration-stops">
+        <p class="idx">[04]</p>
+        <h3>API &amp; Integration Failure Triage</h3>
+        <p>What should this processor code make a person do?</p>
+        <p>The break is a webhook or batch-reject line that still needs a label before anyone sends, waits, or escalates.</p>
+        <p>SQL looks the code up. <a href="patterns/classify/sql/query.sql">The classify query</a> returns the action on the code map, and it returns escalate when the code is not on the map. The disbursement script reads the JSONL event itself. It does not call a live API. <code>investigate_failure.py</code> prints the HTTP status from that log next to the code.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> decides the label. A parse error escalates. R02, R03, R04, and <code>BATCH_REJECT</code> mean fix the recipient. Other return codes wait. Codes 91 and 96 are retry. Settled or posted means do not retry. Code 00 with submitted or pending means do not retry. Anything else in that set escalates. The script does not retry, refund, or edit a recipient. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/patterns/classify/python/run.py"><code>patterns/classify/python/run.py</code></a> prints the label only. Unknown codes, including the sample XX, escalate.</p>
+        <p>So what: you follow the label, and a retry label still has to pass <code>reprocess.py</code> before you plan a send.</p>
+        <p><a href="choice-ops.html">Disbursements</a> · <a href="patterns.html#classify">Toolkit</a></p>
+      </section>
+
+      <section class="pattern" id="stuck-pending">
+        <p class="idx">[05]</p>
+        <h3>Pending Payment with a Completed Provider Status</h3>
+        <p>The row is still open. Did the provider already complete it?</p>
+        <p>The break is an internal row that is still failed or pending while the provider event for that same id already says settled.</p>
+        <p>SQL joins the two records on the payment id. The disbursement query <code>webhook_settled_row_not_settled</code> joins the disbursement to its webhook on <code>disbursement_id</code> and keeps the pair when the webhook says settled and the ledger status does not. The dental view joins the attempt to a posted payment on attempt id when the attempt says failed. The toolkit query compares ledger status with the last event status for one <code>entity_id</code>.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> labels that pair <code>status_mismatch</code>. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks it as <code>webhook_already_settled</code> when a webhook says settled or posted and the row itself is not. The planted row is failed. The same block covers a pending row. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> blocks the dental case as <code>status_failed_but_settled</code>. The investigate script prints the mismatch and does not update either side.</p>
+        <p>So what: you do not send that payment again. The provider already completed it, so you correct the internal status or you leave the row.</p>
+        <p><a href="choice-ops.html">Disbursements</a> · <a href="payment-exceptions.html">Reconciliation</a> · <a href="patterns.html#investigate">Toolkit</a></p>
+      </section>
+
+      <section class="pattern band" id="failure-rate">
+        <p class="idx">[06]</p>
+        <h3>Payment Failure Rate Analysis</h3>
+        <p class="kicker">Proposed approach</p>
+        <p>Which slice of attempts failed more often than its own baseline?</p>
+        <p>The break is a failure count with no baseline, so a busy client and a worsening code look the same.</p>
+        <p>The SQL would group attempts by client, method, processor, time window, or error code, divide failures by attempts in that window, and compare the rate with the same slice’s earlier window. This repo does not run that query.</p>
+        <p>No script here writes a failure rate. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/patterns/variance/python/run.py"><code>patterns/variance/python/run.py</code></a> is the nearest file, and it answers a dollar question. <a href="patterns/variance/sql/query.sql">Its query</a> subtracts expected cents from actual cents and flags a gap larger than that line’s tolerance. The script prints the dollars. A failure-rate percentage is not in its output, and this page does not treat a simulated dollar gap as a rate.</p>
+        <p>So what: you do not change a retry rule from a rate this repo never produced. You use the variance script when the question is a dollar gap.</p>
+        <p><a href="patterns.html#variance">Toolkit</a> · <a href="problems.html#failure-rate">Playbook</a></p>
+      </section>
+
+      <section class="pattern" id="ach-return">
+        <p class="idx">[07]</p>
+        <h3>ACH Return Investigation</h3>
+        <p>Does this return mean wait, or fix the account?</p>
+        <p>The break is a return code already on the disbursement or in its log. Another send to the same account repeats it.</p>
+        <p>SQL returns the disbursement row and the events for that <code>disbursement_id</code>, including the processor code on each. The comparison is that code on the row against the same code on the log, and a return event against a ledger status that is not yet returned.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks a return that is not R02, R03, or R04 as <code>return_already_received</code>. R02, R03, and R04 become <code>fix_recipient_data</code>, so they are not planned. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> labels those three codes as fix the recipient and other return codes as wait for the return window. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> labels R01 and R03 as their own causes, and it labels a return sitting on a row that is still failed as <code>return_in_flight</code>. These labels are this demo’s policy.</p>
+        <p>So what: you wait out an insufficient-funds return instead of retrying it the same day, and you fix the account when the code says it cannot be located. Neither row goes on the plan.</p>
+        <p><a href="choice-ops.html">Disbursements</a></p>
+      </section>
+
+      <section class="pattern band" id="new-client">
+        <p class="idx">[08]</p>
+        <h3>Client Configuration Validation</h3>
+        <p class="kicker">Proposed approach</p>
+        <p>Do this client’s settings match the approved profile?</p>
+        <p>The break is a new client whose stored settings disagree with the approved profile, so the first batch fails for a setting.</p>
+        <p>The SQL would compare the client’s stored settings with the approved profile on client id: account, method, and limits. This repo has no profile table and does not run that comparison.</p>
+        <p>The script would run one controlled transaction and write down what it did. There is no such script in this repo, and there is no result to read.</p>
+        <p>So what: you do not approve the client from this repo, because the check has not been run.</p>
+        <p><a href="problems.html#new-client">Playbook</a></p>
+      </section>
+
+      <section class="pattern" id="reports-disagree">
+        <p class="idx">[09]</p>
+        <h3>Batch-to-Ledger Reconciliation</h3>
+        <p>Which traces match, and which ones do not agree?</p>
+        <p>The break is a trace that is missing on one side, doubled, or carrying a different amount on the client file than on the settled ledger.</p>
+        <p>SQL joins the two sources on trace. <a href="patterns/reconcile/sql/query.sql">The reconcile query</a> labels each trace matched, missing on the left, missing on the right, amount mismatch, or duplicate key. <code>reconcile_batch.py</code> groups settled disbursements for one client, status settled, by trace number, and groups the CSV on that same trace. The dental view compares a posted payment with its claim on <code>claim_id</code>, including a payment whose patient id is not the claim’s patient, and it compares ERA amount with insurance responsibility on that claim.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a> stops if the CSV header is not the expected columns, then reports those buckets. It does not repair fields. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/patterns/reconcile/python/run.py"><code>patterns/reconcile/python/run.py</code></a> prints the label and does not change either source. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/investigate.py"><code>investigate.py</code></a> writes those dental rows to the exception CSV, and the short-pay row carries the action to appeal or rebill. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> never takes that reason as a retry candidate. Dollar figures for these breaks are the simulated findings already on the case pages.</p>
+        <p>So what: you work the bucket the script named, and you appeal a short pay instead of retrying the card.</p>
+        <p><a href="choice-ops.html">Disbursements</a> · <a href="payment-exceptions.html">Reconciliation</a> · <a href="patterns.html#reconcile">Toolkit</a></p>
+      </section>
+
+      <section class="pattern band" id="same-fix">
+        <p class="idx">[10]</p>
+        <h3>Automating Recurring Exception Checks</h3>
+        <p>Can this check run again without creating a second payment?</p>
+        <p>The break is the same exception coming back every day, where a hand-built retry is how a settled key gets sent twice.</p>
+        <p>SQL repeats the same comparison on every run: the attempt’s idempotency key against posted or settled payments, and the disbursement’s key against other rows that are already settled or posted.</p>
+        <p><a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/patterns/repair/python/run.py"><code>patterns/repair/python/run.py</code></a> is a dry run unless you pass <code>--execute</code>. It refuses the settled key, plans the open key, and on execute inserts one plan row while the posted-payment count stays the same. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> and <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/choice-ops/python/reprocess.py"><code>reprocess.py</code></a> are that control on the two ledgers. <code>--execute</code> writes a queue row and does not create a payment. <a href="https://github.com/haleymykellemaes-beep/work-projects/blob/main/payment-exceptions/python/investigate.py"><code>investigate.py</code></a> rewrites the exception CSV from the SQL view every time it runs.</p>
+        <p>So what: you rerun the script and queue only the rows it marked safe. You do not type a retry for a key the script blocked.</p>
+        <p><a href="patterns.html#repair">Toolkit</a> · <a href="payment-exceptions.html">Reconciliation</a> · <a href="choice-ops.html">Disbursements</a></p>
+      </section>
+
+      <nav class="pager" aria-label="More">
+        <a href="problems.html">Playbook</a>
+        <a href="payment-exceptions.html">[01] Reconciliation</a>
+        <a href="choice-ops.html">[02] Disbursements</a>
+        <a href="patterns.html">[03] Toolkit</a>
+        <a href="index.html">Portfolio</a>
+      </nav>
+    </main>
+
+    <footer class="site-foot">
+      <p>All data is synthetic.</p>
+      <p>
+        <a href="https://haleymykellemaes-beep.github.io/work-projects/">haleymykellemaes-beep.github.io/work-projects</a>
+        ·
+        <a href="https://github.com/haleymykellemaes-beep/work-projects">Source on GitHub</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
