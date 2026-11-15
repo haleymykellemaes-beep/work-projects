@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Payment exceptions — Haley Maes</title>
   <meta name="description" content="A synthetic dental billing week: duplicates, short pays, misapplied cash, and a reprocess plan that does not create a payment.">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <div class="sheet">
@@ -30,6 +30,7 @@
       <p><code>seed.py</code> builds one synthetic dental week and the SQLite ledger. <code>investigate.py</code> prints the exception queue. <code>reprocess_plan.py</code> stays a dry run until <code>--execute</code>.</p>
       <p>A patient card or ACH retry is planned only when that idempotency key has never been posted. An insurance short pay is an appeal, not a card retry. <code>--execute</code> writes a plan row. It does not create a payment.</p>
 
+      <section class="band">
       <h2>The week</h2>
       <p>159 claims. 140 fully reconciled and off the queue.</p>
       <div class="table-wrap">
@@ -48,6 +49,7 @@
         </table>
       </div>
       <p>A blind retry of attempts whose key is already posted would resend $258. The safe reprocess plan is $193 across 2 attempts.</p>
+      </section>
 
       <h2>How to run</h2>
       <p>From the repo root:</p>

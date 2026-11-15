@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Choice ops — Haley Maes</title>
   <meta name="description" content="Synthetic disbursement drills: investigate a failure, guard the reprocess, reconcile a batch, and label a webhook.">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <div class="sheet">
@@ -31,6 +31,7 @@
       <p><code>reprocess.py</code> is a dry run. It keeps the rows that are safe to plan and blocks the rest. <code>--execute</code> inserts plan rows only. The disbursement count stays 20. A second execute inserts 0.</p>
       <p><code>reconcile_batch.py</code> compares the Northwind file with settled disbursements. <code>classify_webhook.py</code> turns a processor code into a label. A label is not a send.</p>
 
+      <section class="band">
       <h2>Investigate</h2>
       <p>8 causes, 9 rows, $7,045.50.</p>
       <div class="table-wrap">
@@ -50,6 +51,7 @@
           </tbody>
         </table>
       </div>
+      </section>
 
       <h2>Reprocess</h2>
       <p>Dry run: safe 3 / $637.50. Blocked 9 / $6,905.50.</p>

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The same break — Haley Maes</title>
   <meta name="description" content="Ten financial exception types across a dental ledger and a disbursement file. Synthetic cases. Haley Maes.">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <div class="sheet">
@@ -35,7 +35,7 @@
         <p><a href="patterns/investigate/python/run.py"><code>patterns/investigate</code></a> does that for one id. <a href="patterns/investigate/sql/query.sql">The SQL</a> returns the timeline. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> does the same on the disbursement ledger, with <a href="choice-ops/sql/disbursements.sql">the disbursement queries</a>. <a href="choice-ops.html">Choice ops</a>.</p>
       </section>
 
-      <section class="pattern" id="duplicate-after-timeout">
+      <section class="pattern band" id="duplicate-after-timeout">
         <p class="idx">[02]</p>
         <h3>Duplicate after a timeout</h3>
         <p>The first attempt timed out, a second send goes out, and the idempotency key is already settled.</p>
@@ -51,7 +51,7 @@
         <p><a href="choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a> is that next step. It compares the Northwind file with settled disbursements, and it stops if the columns are not the expected header. <a href="choice-ops.html">Choice ops</a>.</p>
       </section>
 
-      <section class="pattern" id="integration-stops">
+      <section class="pattern band" id="integration-stops">
         <p class="idx">[04]</p>
         <h3>Integration stops</h3>
         <p>A client change lands and the integration stops.</p>
@@ -67,7 +67,7 @@
         <p>The planted status mismatch on <a href="choice-ops.html">Choice ops</a> is $1,250. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> sets that row next to the event log.</p>
       </section>
 
-      <section class="pattern" id="failure-rate">
+      <section class="pattern band" id="failure-rate">
         <p class="idx">[06]</p>
         <h3>Failure rate jumps</h3>
         <p>Failures take a larger share of attempts than they did.</p>
@@ -83,7 +83,7 @@
         <p>Both are already on <a href="choice-ops.html">Choice ops</a>. R01 is $480. R03 is $915.50. <a href="choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> turns the code into a label.</p>
       </section>
 
-      <section class="pattern" id="new-client">
+      <section class="pattern band" id="new-client">
         <p class="idx">[08]</p>
         <h3>New client, wrong configuration</h3>
         <p>A new client is configured, and a setting does not match the profile that was approved.</p>
@@ -98,7 +98,7 @@
         <p>The Northwind file on <a href="choice-ops.html">Choice ops</a>, from <a href="choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a>: matched 3 / $1,650; missing TR-9101 $200; not sent TR-9102 $150; amount mismatch $300 vs $280 (TR-9103); duplicate trace $128 vs $64 (TR-9104). <a href="payment-exceptions.html">Payment exceptions</a> is the dental version of the same match. The short form is <a href="patterns/reconcile/python/run.py"><code>patterns/reconcile</code></a>.</p>
       </section>
 
-      <section class="pattern" id="same-fix">
+      <section class="pattern band" id="same-fix">
         <p class="idx">[10]</p>
         <h3>The same manual fix</h3>
         <p>The same check gets done by hand every day.</p>
