@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Choice ops — Haley Maes</title>
+  <meta name="description" content="Synthetic disbursement drills: investigate a failure, guard the reprocess, reconcile a batch, and label a webhook.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sheet">
+    <header class="mast">
+      <a class="name" href="index.html">Haley Maes</a>
+      <nav aria-label="Sections">
+        <a href="index.html">Work</a>
+        <a href="payment-exceptions.html">Ledger</a>
+        <a href="choice-ops.html">Disbursements</a>
+        <a href="patterns.html">Patterns</a>
+      </nav>
+      <p>Technical operations</p>
+    </header>
+
+    <main class="case">
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[02] Choice ops</p>
+      <h1 class="question choice">Did this disbursement already move, or is it safe to send again?</h1>
+      <p class="lede">Same four breaks I already chase on money coming in, pointed at money going out. I pull the timeline, I refuse anything that would pay twice, and I only write a plan row.</p>
+
+      <h2>What the code does</h2>
+      <p><code>seed.py</code> rebuilds a synthetic disbursement ledger, a webhook log, and one client batch file. <code>investigate_failure.py</code> sets the ledger row next to the event log. Pass an id, such as <code>DSP-7001</code>, when I want one timeline.</p>
+      <p><code>reprocess.py</code> is a dry run. It keeps the rows that are safe to plan and blocks the rest. <code>--execute</code> inserts plan rows only. The disbursement count stays 20. A second execute inserts 0.</p>
+      <p><code>reconcile_batch.py</code> compares the Northwind file with settled disbursements. <code>classify_webhook.py</code> turns a processor code into a label. A label is not a send.</p>
+
+      <h2>Investigate</h2>
+      <p>8 causes, 9 rows, $7,045.50.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Cause</th><th class="num">Rows</th><th class="num">Dollars</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>status_mismatch</td><td class="num">1</td><td class="num">$1,250</td></tr>
+            <tr><td>ach_r01</td><td class="num">1</td><td class="num">$480</td></tr>
+            <tr><td>ach_r03</td><td class="num">1</td><td class="num">$915.50</td></tr>
+            <tr><td>batch_rejected</td><td class="num">1</td><td class="num">$220</td></tr>
+            <tr><td>duplicate_trace</td><td class="num">2</td><td class="num">$1,280</td></tr>
+            <tr><td>idempotency_already_settled</td><td class="num">1</td><td class="num">$1,800</td></tr>
+            <tr><td>return_in_flight</td><td class="num">1</td><td class="num">$350</td></tr>
+            <tr><td>amount_mismatch</td><td class="num">1</td><td class="num">$750</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Reprocess</h2>
+      <p>Dry run: safe 3 / $637.50. Blocked 9 / $6,905.50.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Id</th><th>Why it is safe</th><th class="num">Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>DSP-7011</td><td>Code 96</td><td class="num">$410</td></tr>
+            <tr><td>DSP-7012</td><td>Code 91</td><td class="num">$128.50</td></tr>
+            <tr><td>DSP-7013</td><td>Pending since Nov 13</td><td class="num">$99</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Northwind batch</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Break</th><th>What the file and the ledger say</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Matched</td><td>3 / $1,650</td></tr>
+            <tr><td>Missing from batch</td><td>TR-9101 $200</td></tr>
+            <tr><td>In file, not sent</td><td>TR-9102 $150</td></tr>
+            <tr><td>Amount mismatch</td><td>Ledger $300 vs file $280 (TR-9103)</td></tr>
+            <tr><td>Duplicate trace</td><td>File $128 vs one settled $64 (TR-9104)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Webhook labels</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Label</th><th class="num">Count</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Retry</td><td class="num">2</td></tr>
+            <tr><td>Do not retry</td><td class="num">9</td></tr>
+            <tr><td>Fix recipient</td><td class="num">2</td></tr>
+            <tr><td>Wait for return window</td><td class="num">2</td></tr>
+            <tr><td>Escalate</td><td class="num">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>How to run</h2>
+      <p>From the repo root:</p>
+      <pre><code>python3 choice-ops/python/seed.py
+python3 choice-ops/python/investigate_failure.py
+python3 choice-ops/python/investigate_failure.py DSP-7001
+python3 choice-ops/python/reprocess.py
+python3 choice-ops/python/reconcile_batch.py
+python3 choice-ops/python/classify_webhook.py</code></pre>
+      <p>Synthetic clients, recipient tokens, and trace numbers. These scripts do not call a network.</p>
+      <p><a href="choice-ops/README.md">Project notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/choice-ops">Source on GitHub</a></p>
+
+      <nav class="pager" aria-label="More">
+        <a href="payment-exceptions.html">[01] Payment exceptions</a>
+        <a href="patterns.html">[03] Patterns</a>
+        <a href="index.html">Cover</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

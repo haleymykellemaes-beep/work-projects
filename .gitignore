@@ -1,0 +1,8 @@
+__pycache__/
+*.db
+payment-exceptions/data/out/
+payment-exceptions/data/inbound/local/
+choice-ops/data/*.csv
+choice-ops/data/*.jsonl
+choice-ops/data/*.db
+.DS_Store

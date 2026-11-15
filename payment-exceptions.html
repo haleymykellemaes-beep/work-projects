@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment exceptions — Haley Maes</title>
+  <meta name="description" content="A synthetic dental billing week: duplicates, short pays, misapplied cash, and a reprocess plan that does not create a payment.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sheet">
+    <header class="mast">
+      <a class="name" href="index.html">Haley Maes</a>
+      <nav aria-label="Sections">
+        <a href="index.html">Work</a>
+        <a href="payment-exceptions.html">Ledger</a>
+        <a href="choice-ops.html">Disbursements</a>
+        <a href="patterns.html">Patterns</a>
+      </nav>
+      <p>Technical operations</p>
+    </header>
+
+    <main class="case">
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[01] Payment exceptions</p>
+      <h1 class="question">Which open dollars are real misses, and which retry would charge someone twice?</h1>
+      <p class="lede">I reconcile insurance, patient cards, ACH, checks, and refunds. The miss is rarely “the claim is open.” It is a trace posted twice, a card marked failed after the webhook settled, cash on the wrong patient, or a short pay with no denial.</p>
+
+      <h2>What the code does</h2>
+      <p><code>seed.py</code> builds one synthetic dental week and the SQLite ledger. <code>investigate.py</code> prints the exception queue. <code>reprocess_plan.py</code> stays a dry run until <code>--execute</code>.</p>
+      <p>A patient card or ACH retry is planned only when that idempotency key has never been posted. An insurance short pay is an appeal, not a card retry. <code>--execute</code> writes a plan row. It does not create a payment.</p>
+
+      <h2>The week</h2>
+      <p>159 claims. 140 fully reconciled and off the queue.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Break</th><th class="num">Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Duplicate ERA or card posts</td><td class="num">$225</td></tr>
+            <tr><td>Card marked failed after the webhook settled</td><td class="num">$82</td></tr>
+            <tr><td>Decline posted by hand</td><td class="num">$96</td></tr>
+            <tr><td>Cash on the wrong patient</td><td class="num">$155</td></tr>
+            <tr><td>Insurance short pay with no denial</td><td class="num">$90</td></tr>
+            <tr><td>Refund larger than the payment</td><td class="num">$25</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A blind retry of attempts whose key is already posted would resend $258. The safe reprocess plan is $193 across 2 attempts.</p>
+
+      <h2>How to run</h2>
+      <p>From the repo root:</p>
+      <pre><code>python3 payment-exceptions/python/seed.py
+python3 payment-exceptions/python/investigate.py
+python3 payment-exceptions/python/reprocess_plan.py</code></pre>
+      <p>Python 3 standard library only. The figures above are the synthetic week, not a live ledger.</p>
+      <p><a href="payment-exceptions/README.md">Project notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/payment-exceptions">Source on GitHub</a></p>
+
+      <nav class="pager" aria-label="More">
+        <a href="choice-ops.html">[02] Choice ops</a>
+        <a href="patterns.html">[03] Patterns</a>
+        <a href="index.html">Cover</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

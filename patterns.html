@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patterns — Haley Maes</title>
+  <meta name="description" content="Five short investigation patterns: one question, one SQL file, one Python script, and a few synthetic rows.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sheet">
+    <header class="mast">
+      <a class="name" href="index.html">Haley Maes</a>
+      <nav aria-label="Sections">
+        <a href="index.html">Work</a>
+        <a href="payment-exceptions.html">Ledger</a>
+        <a href="choice-ops.html">Disbursements</a>
+        <a href="patterns.html">Patterns</a>
+      </nav>
+      <p>Technical operations</p>
+    </header>
+
+    <main class="case">
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[03] Pattern library</p>
+      <h1 class="question patterns">What do I copy the next time a number does not tie?</h1>
+      <p class="lede">Every problem gets the same four files. I use them on failed payments at Choice Digital, and on an ordinary business total that will not match.</p>
+
+      <h2>The four files</h2>
+      <ul>
+        <li><code>README.md</code> — the question, the inputs, the control, and how to run.</li>
+        <li><code>sql/query.sql</code> — the check, readable on its own.</li>
+        <li><code>python/run.py</code> — loads a few synthetic rows, runs the check, prints a short result, exits 0.</li>
+        <li>The rows — written in the script. Standard library and sqlite only.</li>
+      </ul>
+      <p>These are skeletons. The full dental ledger and the disbursement drills stay in their own folders.</p>
+
+      <section class="pattern" id="investigate">
+        <p class="idx">[01]</p>
+        <h3>Investigate</h3>
+        <p>One entity id. The system of record on one side, the event log on the other. Say the mismatch in one sentence.</p>
+        <p>Use it when someone hands me a payment id and the row and the webhook disagree.</p>
+        <pre><code>python3 patterns/investigate/python/run.py</code></pre>
+        <p><a href="patterns/investigate/README.md">Notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/patterns/investigate">Source</a></p>
+      </section>
+
+      <section class="pattern" id="repair">
+        <p class="idx">[02]</p>
+        <h3>Repair</h3>
+        <p>Dry run by default. Refuse the attempt if its idempotency key is already settled. <code>--execute</code> writes a plan row only. It does not create a payment.</p>
+        <p>Use it before a retry, a reprocess, or any second send.</p>
+        <pre><code>python3 patterns/repair/python/run.py
+python3 patterns/repair/python/run.py --execute</code></pre>
+        <p><a href="patterns/repair/README.md">Notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/patterns/repair">Source</a></p>
+      </section>
+
+      <section class="pattern" id="reconcile">
+        <p class="idx">[03]</p>
+        <h3>Reconcile</h3>
+        <p>Two sources. Report missing left, missing right, amount mismatch, and a duplicate key.</p>
+        <p>Use it on a batch file against the settled ledger, or any two extracts that should tie.</p>
+        <pre><code>python3 patterns/reconcile/python/run.py</code></pre>
+        <p><a href="patterns/reconcile/README.md">Notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/patterns/reconcile">Source</a></p>
+      </section>
+
+      <section class="pattern" id="classify">
+        <p class="idx">[04]</p>
+        <h3>Classify</h3>
+        <p>Map a code to an action: retry, do not retry, fix data, wait, or escalate. No live side effects.</p>
+        <p>Use it when a webhook or a return code needs a label before anyone touches the payment.</p>
+        <pre><code>python3 patterns/classify/python/run.py</code></pre>
+        <p><a href="patterns/classify/README.md">Notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/patterns/classify">Source</a></p>
+      </section>
+
+      <section class="pattern" id="variance">
+        <p class="idx">[05]</p>
+        <h3>Variance</h3>
+        <p>Expected versus actual for a business total: collections, fees, and hours priced in dollars. Flag a row outside its tolerance and print the dollars.</p>
+        <p>Use it when the tie-out is not a payment id. A week of collections, a fee bill, a labor total.</p>
+        <pre><code>python3 patterns/variance/python/run.py</code></pre>
+        <p><a href="patterns/variance/README.md">Notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/patterns/variance">Source</a></p>
+      </section>
+
+      <nav class="pager" aria-label="More">
+        <a href="payment-exceptions.html">[01] Payment exceptions</a>
+        <a href="choice-ops.html">[02] Choice ops</a>
+        <a href="index.html">Cover</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>
