@@ -1,4 +1,4 @@
-"""Synthetic Choice Digital incidents. No real people, accounts, or amounts from production.
+"""Synthetic disbursement incidents. No real people, accounts, or amounts from production.
 
 Eight failure types are planted. Safe retries and clean batch rows are planted
 beside them so a tool that flags everything still fails the self-check.

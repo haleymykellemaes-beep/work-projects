@@ -1,4 +1,4 @@
--- Outbound disbursement ledger for Choice Digital ops practice.
+-- Outbound disbursement ledger for an independent practice project.
 -- Synthetic only. Apply with: python3 choice-ops/python/seed.py
 --
 -- Named queries (-- query: name) use bound parameters. investigate_failure.py
