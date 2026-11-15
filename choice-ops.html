@@ -3,72 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Choice ops — Haley Maes</title>
-  <meta name="description" content="Synthetic disbursement drills: investigate a failure, guard the reprocess, reconcile a batch, and label a webhook.">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <title>Disbursement Investigation &amp; Retry Controls — Haley Maes</title>
+  <meta name="description" content="Independent practice project. Compare transaction records with webhook events, reconcile a client batch, and identify which attempts qualify for a reprocessing plan. Synthetic data.">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="sheet">
     <header class="mast">
       <a class="name" href="index.html">Haley Maes</a>
       <nav aria-label="Sections">
-        <a href="index.html">Work</a>
-        <a href="problems.html">Breaks</a>
-        <a href="payment-exceptions.html">Ledger</a>
+        <a href="index.html">Portfolio</a>
+        <a href="payment-exceptions.html">Reconciliation</a>
         <a href="choice-ops.html">Disbursements</a>
-        <a href="patterns.html">Patterns</a>
+        <a href="patterns.html">Toolkit</a>
+        <a href="problems.html">Playbook</a>
       </nav>
       <p>Technical operations</p>
     </header>
 
     <main class="case">
-      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[02] Choice ops</p>
-      <h1 class="question choice">Did this disbursement already move, or is it safe to send again?</h1>
-      <p class="lede">Same four breaks I already chase on money coming in, pointed at money going out. I pull the timeline, I refuse anything that would pay twice, and I only write a plan row.</p>
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[02] Disbursements · independent practice</p>
+      <h1 class="question">Disbursement Investigation &amp; Retry Controls</h1>
+      <p class="lede">Did this disbursement already move, or is it safe to send again?</p>
+      <p>These synthetic examples show how I would investigate failed payments in a technical operations role. I built this practice project for this portfolio. All of the clients, recipient tokens, and traces are synthetic.</p>
 
-      <h2>What the code does</h2>
-      <p><code>seed.py</code> rebuilds a synthetic disbursement ledger, a webhook log, and one client batch file. <code>investigate_failure.py</code> sets the ledger row next to the event log. Pass an id, such as <code>DSP-7001</code>, when I want one timeline.</p>
-      <p><code>reprocess.py</code> is a dry run. It keeps the rows that are safe to plan and blocks the rest. <code>--execute</code> inserts plan rows only. The disbursement count stays 20. A second execute inserts 0.</p>
-      <p><code>reconcile_batch.py</code> compares the Northwind file with settled disbursements. <code>classify_webhook.py</code> turns a processor code into a label. A label is not a send.</p>
+      <h2>What I built</h2>
+      <p><code>seed.py</code> rebuilds a SQLite ledger, a JSONL webhook log, and one client batch file. <code>investigate_failure.py</code> prints the ledger row beside that log and names the cause. <code>reprocess.py</code> is a dry run. <code>--execute</code> inserts a plan row into <code>reprocess_queue</code> and does not create a second payment. It does not call a processor. It checks the key, the status, and the amount again before it writes, and it stops if the disbursement table changes size. <code>reconcile_batch.py</code> compares settled rows with the batch CSV. <code>classify_webhook.py</code> turns a processor code into a label. A label is not a send. The queries live in <code>sql/disbursements.sql</code>.</p>
 
       <section class="band">
-      <h2>Investigate</h2>
-      <p>8 causes, 9 rows, $7,045.50.</p>
+      <h2>Sample output</h2>
+      <p>Internal status says failed or pending, and the provider event says settled: do not send again. DSP-7001 is the planted case. The ledger says failed. The webhook says settled. The amount is $1,250. <code>reprocess.py</code> blocks it as <code>webhook_already_settled</code>.</p>
+      <p>Safe plan 3 payments / $637.50. Blocked 9 / $6,905.50. These are simulated findings.</p>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Cause</th><th class="num">Rows</th><th class="num">Dollars</th></tr>
+            <tr><th>Id</th><th>Why the plan includes it</th><th class="num">Amount</th></tr>
           </thead>
           <tbody>
-            <tr><td>status_mismatch</td><td class="num">1</td><td class="num">$1,250</td></tr>
-            <tr><td>ach_r01</td><td class="num">1</td><td class="num">$480</td></tr>
-            <tr><td>ach_r03</td><td class="num">1</td><td class="num">$915.50</td></tr>
-            <tr><td>batch_rejected</td><td class="num">1</td><td class="num">$220</td></tr>
-            <tr><td>duplicate_trace</td><td class="num">2</td><td class="num">$1,280</td></tr>
-            <tr><td>idempotency_already_settled</td><td class="num">1</td><td class="num">$1,800</td></tr>
-            <tr><td>return_in_flight</td><td class="num">1</td><td class="num">$350</td></tr>
-            <tr><td>amount_mismatch</td><td class="num">1</td><td class="num">$750</td></tr>
+            <tr><td>DSP-7011</td><td>Failed, code 96, timeout. Amount matches. No return. No settled row on this key.</td><td class="num">$410</td></tr>
+            <tr><td>DSP-7012</td><td>Failed, code 91, processor unavailable. Same guards as DSP-7011.</td><td class="num">$128.50</td></tr>
+            <tr><td>DSP-7013</td><td>Pending since Nov 13, past the 24-hour window. The other guards pass.</td><td class="num">$99</td></tr>
           </tbody>
         </table>
       </div>
+      <p>A row is eligible only when every check in <code>reprocess.py</code> passes. The idempotency key is not already on another settled or posted row. No return is on the row or in the log. Every logged amount matches the ledger amount. The trace number is not already on another disbursement. No webhook already says settled or posted. Status is failed, or pending and last updated before the 24-hour window (the clock in this demo is 2026-11-15T17:00:00Z). Rejected rows are blocked until the data is fixed. Submitted rows stay in flight. Pending rows inside the window stay blocked. This script does not filter by payment method.</p>
+      <p>Code 96 and code 91 are not a pass by themselves. <code>classify_webhook.py</code> labels both as retry. <code>reprocess.py</code> still runs the checks above. DSP-7011 and DSP-7012 pass, so they are on the plan. DSP-7010 is also code 96 and is blocked because the acknowledgement is $755 and the ledger is $750. DSP-7007 is code 96 and is blocked because the same key already settled on DSP-7008 for $1,800.</p>
+      <p>ACH handling here is this demo’s policy, not a universal banking rule. R01, insufficient funds, is a return already received: the plan blocks it and the webhook label is wait. A same-day retry is not treated as a way to make the debit good. R03, unable to locate the account, is fix the recipient: do not send the same token again. R02 and R04 use that same fix-recipient label. Any other return code is blocked as a return already received.</p>
       </section>
 
-      <h2>Reprocess</h2>
-      <p>Dry run: safe 3 / $637.50. Blocked 9 / $6,905.50.</p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Id</th><th>Why it is safe</th><th class="num">Amount</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>DSP-7011</td><td>Code 96</td><td class="num">$410</td></tr>
-            <tr><td>DSP-7012</td><td>Code 91</td><td class="num">$128.50</td></tr>
-            <tr><td>DSP-7013</td><td>Pending since Nov 13</td><td class="num">$99</td></tr>
-          </tbody>
-        </table>
-      </div>
-
       <h2>Northwind batch</h2>
+      <p><code>reconcile_batch.py</code> compares settled disbursements with the client file. It stops if the CSV header is not the expected columns. It reports four breaks and leaves the three clean traces matched.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -85,6 +69,7 @@
       </div>
 
       <h2>Webhook labels</h2>
+      <p><code>classify_webhook.py</code> prints a label and writes nothing. Counts from the seeded log:</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -108,14 +93,14 @@ python3 choice-ops/python/investigate_failure.py DSP-7001
 python3 choice-ops/python/reprocess.py
 python3 choice-ops/python/reconcile_batch.py
 python3 choice-ops/python/classify_webhook.py</code></pre>
-      <p>Synthetic clients, recipient tokens, and trace numbers. These scripts do not call a network.</p>
+      <p>These scripts do not call a network.</p>
       <p><a href="choice-ops/README.md">Project notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/choice-ops">Source on GitHub</a></p>
 
       <nav class="pager" aria-label="More">
-        <a href="payment-exceptions.html">[01] Payment exceptions</a>
-        <a href="patterns.html">[03] Patterns</a>
-        <a href="problems.html">The same break</a>
-        <a href="index.html">Cover</a>
+        <a href="payment-exceptions.html">[01] Reconciliation</a>
+        <a href="patterns.html">[03] Toolkit</a>
+        <a href="problems.html">Playbook</a>
+        <a href="index.html">Portfolio</a>
       </nav>
     </main>
   </div>

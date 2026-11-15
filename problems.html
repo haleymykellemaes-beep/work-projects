@@ -3,154 +3,130 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>The same break — Haley Maes</title>
-  <meta name="description" content="Ten financial exception types across a dental ledger and a disbursement file. Synthetic cases. Haley Maes.">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <title>Payment Exception Playbook — Haley Maes</title>
+  <meta name="description" content="Ten payment exception scenarios connecting dental billing experience with technical operations workflows. Synthetic examples. Implemented checks are linked to the scripts.">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="sheet">
     <header class="mast">
       <a class="name" href="index.html">Haley Maes</a>
       <nav aria-label="Sections">
-        <a href="index.html">Work</a>
-        <a href="problems.html">Breaks</a>
-        <a href="payment-exceptions.html">Ledger</a>
+        <a href="index.html">Portfolio</a>
+        <a href="payment-exceptions.html">Reconciliation</a>
         <a href="choice-ops.html">Disbursements</a>
-        <a href="patterns.html">Patterns</a>
+        <a href="patterns.html">Toolkit</a>
+        <a href="problems.html">Playbook</a>
       </nav>
       <p>Technical operations</p>
     </header>
 
     <main class="case">
-      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>Financial exceptions, two systems</p>
-      <h1 class="question">The same break.</h1>
-      <p class="lede">Ten ways money fails to tie. A dental ledger and a disbursement file ask the same questions. Haley Maes.</p>
-      <p>These are the kinds of breaks the work is built to catch. Every row is synthetic. Nothing on this page is a confirmed live incident.</p>
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>Ten scenarios</p>
+      <h1 class="question">Payment Exception Playbook</h1>
+      <p class="lede">Ten payment exception scenarios connecting dental billing experience with technical operations workflows.</p>
+      <p>These synthetic examples show how I would investigate failed payments in a technical operations role. I work in dental billing. I built the practice projects in this repo. A scenario below is implemented only when a script in this repo demonstrates the check. The other two are a proposed approach.</p>
 
-      <section class="pattern" id="unclear-failure">
+      <section class="pattern" id="payment-failure">
         <p class="idx">[01]</p>
-        <h3>Unclear failure</h3>
-        <p>A payment fails, and the reason on the row is not enough to act.</p>
-        <p>Read the ledger with SQL. Set the API or JSON log beside it. Compare a success with this failure and say the difference in one sentence.</p>
-        <p><a href="patterns/investigate/python/run.py"><code>patterns/investigate</code></a> does that for one id. <a href="patterns/investigate/sql/query.sql">The SQL</a> returns the timeline. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> does the same on the disbursement ledger, with <a href="choice-ops/sql/disbursements.sql">the disbursement queries</a>. <a href="choice-ops.html">Choice ops</a>.</p>
+        <h3>Payment Failure Investigation</h3>
+        <p>Implemented. Read the ledger and the event log for one id, and say how they differ.</p>
+        <p><a href="patterns/investigate/python/run.py"><code>patterns/investigate</code></a> loads PAY-1042. <a href="patterns/investigate/sql/query.sql">The SQL</a> returns the ledger row, then the events. The ledger says failed. The last webhook says settled. The script prints that sentence and does not update either side.</p>
+        <p><a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> does the same job on the disbursement ledger: JSONL beside the SQLite row, using <a href="choice-ops/sql/disbursements.sql">the disbursement queries</a>. <a href="payment-exceptions/python/investigate.py"><code>investigate.py</code></a> prints the dental exception queue from the SQL view and writes a CSV. It does not change payments. <a href="payment-exceptions.html">Reconciliation</a> · <a href="choice-ops.html">Disbursements</a>.</p>
       </section>
 
       <section class="pattern band" id="duplicate-after-timeout">
         <p class="idx">[02]</p>
-        <h3>Duplicate after a timeout</h3>
-        <p>The first attempt timed out, a second send goes out, and the idempotency key is already settled.</p>
-        <p>Look up the key before any retry. If it already settled, block the second payment.</p>
-        <p><a href="choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks that case on a dry run. <a href="payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> refuses a dental post whose key is already posted. <a href="payment-exceptions.html">Payment exceptions</a> · <a href="choice-ops.html">Choice ops</a>.</p>
+        <h3>Duplicate Payment Risk After a Timeout</h3>
+        <p>Implemented. A timeout is not permission to send again. The check is whether that idempotency key is already posted.</p>
+        <p>DSP-7007 failed with code 96. DSP-7008 already settled $1,800 on the same key. <a href="choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks DSP-7007 as <code>idempotency_already_settled</code>. DSP-7011 is also a timeout, code 96, HTTP 504, $410, and it is eligible only because the amount matches, there is no return, and no settled row uses that key.</p>
+        <p>On the dental ledger, a patient-card attempt can say failed with processor code <code>timeout</code> after the webhook posted the same key. That planted case is $82. <a href="payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> blocks <code>status_failed_but_settled</code> and blocks a retry whose key is already posted. If the SQL view marks a row safe and the key is already posted, the script refuses to write the plan. <a href="patterns/repair/python/run.py"><code>patterns/repair</code></a> refuses KEY-SETTLED and plans KEY-OPEN. <a href="payment-exceptions.html">Reconciliation</a> · <a href="choice-ops.html">Disbursements</a>.</p>
       </section>
 
       <section class="pattern" id="batch-rejected">
         <p class="idx">[03]</p>
-        <h3>Whole batch rejected</h3>
-        <p>The file is rejected, so none of the rows in it move.</p>
-        <p>Validate the fields before reprocessing. A bad or missing field is fixed, then the row goes out in a new file. Reconciliation is the step after that file is worth comparing.</p>
-        <p><a href="choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a> is that next step. It compares the Northwind file with settled disbursements, and it stops if the columns are not the expected header. <a href="choice-ops.html">Choice ops</a>.</p>
+        <h3>Rejected Batch Investigation</h3>
+        <p>Implemented. DSP-7004 is a rejected check-batch row, $220. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> labels it <code>batch_rejected</code>. The planted note says the file rejected the row before mail because the mail-to name was missing. <a href="choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> labels <code>BATCH_REJECT</code> as fix the recipient. That label does not build a new file.</p>
+        <p><a href="choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks a rejected status as <code>fix_before_retry</code>. <a href="choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a> is the later compare: it checks that the CSV header matches the expected columns, then reports matched, missing from the batch, in the file but never settled, amount mismatch, and duplicate trace. It does not repair fields. <a href="choice-ops.html">Disbursements</a>.</p>
       </section>
 
       <section class="pattern band" id="integration-stops">
         <p class="idx">[04]</p>
-        <h3>Integration stops</h3>
-        <p>A client change lands and the integration stops.</p>
-        <p>Check the HTTP code, the auth result, and whether a JSON field is missing or renamed. The next action is a label. It is not a live call.</p>
-        <p><a href="patterns/classify/python/run.py"><code>patterns/classify</code></a> maps a code to retry, do not retry, fix data, wait, or escalate, and prints the label only. <a href="patterns.html#classify">Pattern notes</a>.</p>
+        <h3>API &amp; Integration Failure Triage</h3>
+        <p>Implemented. The demonstrated check is a label for a webhook or batch-reject event. It is not a live call.</p>
+        <p><a href="choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> reads the JSONL. A parse error is <code>escalate_to_engineering</code>. R02, R03, R04, and <code>BATCH_REJECT</code> are fix the recipient. Other return codes wait. Codes 91 and 96 are retry. Status settled or posted is do not retry. Code 00 with submitted or pending is do not retry. Anything else in that set escalates. The script does not retry, refund, or edit a recipient. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> prints the HTTP status on the timeline next to the code. It does not test credentials.</p>
+        <p><a href="patterns/classify/python/run.py"><code>patterns/classify</code></a> looks the code up in <a href="patterns/classify/sql/query.sql">SQL</a>. Unknown codes, including the sample XX, escalate. Labels only. <a href="patterns.html#classify">Toolkit</a>.</p>
       </section>
 
       <section class="pattern" id="stuck-pending">
         <p class="idx">[05]</p>
-        <h3>Stuck pending</h3>
-        <p>The internal status stays pending while the provider already shows completed.</p>
-        <p>Compare the internal status with the webhook. If the webhook settled, correct the row in place. Sending it again pays twice.</p>
-        <p>The planted status mismatch on <a href="choice-ops.html">Choice ops</a> is $1,250. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> sets that row next to the event log.</p>
+        <h3>Pending Payment with a Completed Provider Status</h3>
+        <p>Implemented. If the provider event already says settled, do not send again.</p>
+        <p>DSP-7001 is failed on the ledger and settled on the webhook, $1,250. <a href="choice-ops/python/investigate_failure.py"><code>investigate_failure.py</code></a> labels it <code>status_mismatch</code>. <a href="choice-ops/python/reprocess.py"><code>reprocess.py</code></a> blocks any candidate whose webhook says settled or posted while the row itself is not. The planted row is failed, not pending. The same guard covers a non-settled row, including pending.</p>
+        <p>The dental queue has the same shape at $82: the attempt says failed and the card webhook already posted the key. <a href="payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> blocks it. <a href="patterns/investigate/python/run.py"><code>patterns/investigate</code></a> is PAY-1042, ledger failed, last event settled. <a href="choice-ops.html">Disbursements</a>.</p>
       </section>
 
       <section class="pattern band" id="failure-rate">
         <p class="idx">[06]</p>
-        <h3>Failure rate jumps</h3>
-        <p>Failures take a larger share of attempts than they did.</p>
-        <p>The question a query has to answer is which slice moved (client, method, processor, time window, or error code) and by how much against its own baseline. Group the attempts, compare the slices, and name the outlier.</p>
-        <p>That is the same style of aggregation as <a href="patterns/variance/python/run.py"><code>patterns/variance</code></a>: expected against actual, then the gap. The variance script flags a business total outside its tolerance and prints dollars. It does not produce a failure-rate percentage. <a href="patterns.html#variance">Pattern notes</a>.</p>
+        <h3>Payment Failure Rate Analysis</h3>
+        <p>Proposed approach. The question is which slice of attempts moved (client, method, processor, time window, or error code) and by how much against its own baseline. This repo does not compute that rate.</p>
+        <p><a href="patterns/variance/python/run.py"><code>patterns/variance</code></a> is the nearest script, and it answers a different question. It subtracts expected dollars from actual dollars and flags a gap larger than a tolerance: collections, fees, and hours priced at $45. It prints dollars. It does not produce a failure-rate percentage. <a href="patterns.html#variance">Toolkit</a>.</p>
       </section>
 
       <section class="pattern" id="ach-return">
         <p class="idx">[07]</p>
-        <h3>ACH return, days later</h3>
-        <p>The payment looked finished, then a return shows up days later.</p>
-        <p>Read the return code before anyone retries. R01, insufficient funds: do not retry the same debit. R03, account not located: fix the recipient, and do not send the same token again.</p>
-        <p>Both are already on <a href="choice-ops.html">Choice ops</a>. R01 is $480. R03 is $915.50. <a href="choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> turns the code into a label.</p>
+        <h3>ACH Return Investigation</h3>
+        <p>Implemented. Read the return code before anyone plans a retry. The labels below are this demo’s policy, not a universal banking rule.</p>
+        <p>R01, insufficient funds, is already on DSP-7002, $480. <a href="choice-ops/python/reprocess.py"><code>reprocess.py</code></a> treats a return that is not R02, R03, or R04 as <code>return_already_received</code>. <a href="choice-ops/python/classify_webhook.py"><code>classify_webhook.py</code></a> labels those other return codes <code>wait_for_return_window</code>. The planted note says a same-day retry will not make the debit good. DSP-7009 is still failed on the ledger while an R01 return is in the log. The reprocess script blocks it. The investigate script labels it <code>return_in_flight</code>.</p>
+        <p>R03, unable to locate the account, is DSP-7003, $915.50. Both scripts label it fix the recipient. The planted note says another send to the same token fails the same way. R02 and R04 use that same fix-recipient label in this demo. <a href="choice-ops.html">Disbursements</a>.</p>
       </section>
 
       <section class="pattern band" id="new-client">
         <p class="idx">[08]</p>
-        <h3>New client, wrong configuration</h3>
-        <p>A new client is configured, and a setting does not match the profile that was approved.</p>
-        <p>Compare the settings with that approved profile. Run one controlled transaction. Write down what it did. This repo has no result from that test to quote.</p>
+        <h3>Client Configuration Validation</h3>
+        <p>Proposed approach. Compare the client’s settings with the approved profile, run one controlled transaction, and write down what it did. This repo has no result from that test.</p>
       </section>
 
       <section class="pattern" id="reports-disagree">
         <p class="idx">[09]</p>
-        <h3>Two reports disagree</h3>
-        <p>Two reports that should describe the same money do not.</p>
-        <p>Match on id and on amount. Separate the rows that match, the rows missing from each side, an amount that does not agree, and a key that appears twice.</p>
-        <p>The Northwind file on <a href="choice-ops.html">Choice ops</a>, from <a href="choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a>: matched 3 / $1,650; missing TR-9101 $200; not sent TR-9102 $150; amount mismatch $300 vs $280 (TR-9103); duplicate trace $128 vs $64 (TR-9104). <a href="payment-exceptions.html">Payment exceptions</a> is the dental version of the same match. The short form is <a href="patterns/reconcile/python/run.py"><code>patterns/reconcile</code></a>.</p>
+        <h3>Batch-to-Ledger Reconciliation</h3>
+        <p>Implemented. Match on trace and on amount. Separate rows that match, rows missing from each side, an amount that does not agree, and a trace that appears twice.</p>
+        <p>The Northwind file from <a href="choice-ops/python/reconcile_batch.py"><code>reconcile_batch.py</code></a>: matched 3 / $1,650; missing TR-9101 $200; in the file but not sent TR-9102 $150; ledger $300 vs file $280 (TR-9103); duplicate trace file $128 vs one settled $64 (TR-9104). <a href="payment-exceptions.html">Reconciliation</a> is the dental version: posted payments against claims, including duplicate keys, a short pay, and cash on the wrong patient. The short form is <a href="patterns/reconcile/python/run.py"><code>patterns/reconcile</code></a>.</p>
       </section>
 
       <section class="pattern band" id="same-fix">
         <p class="idx">[10]</p>
-        <h3>The same manual fix</h3>
-        <p>The same check gets done by hand every day.</p>
-        <p>Turn the check into a script. Default to a dry run. Refuse the row when its key is already settled.</p>
-        <p><a href="patterns/repair/python/run.py"><code>patterns/repair</code></a> does that. <code>--execute</code> writes a plan row and does not create a payment. <a href="patterns.html#repair">Pattern notes</a>.</p>
+        <h3>Automating Recurring Exception Checks</h3>
+        <p>Implemented. Turn the check into a script. Default to a dry run. Refuse the row when its key is already settled. Write a plan row. Do not create a second payment.</p>
+        <p><a href="patterns/repair/python/run.py"><code>patterns/repair</code></a> does that on two attempts. <code>--execute</code> inserts one plan row and leaves the posted-payment count unchanged. <a href="payment-exceptions/python/reprocess_plan.py"><code>reprocess_plan.py</code></a> and <a href="choice-ops/python/reprocess.py"><code>reprocess.py</code></a> are the same control on the two ledgers. <a href="payment-exceptions/python/investigate.py"><code>investigate.py</code></a> rewrites the exception queue from the SQL view each time it runs. <a href="patterns.html#repair">Toolkit</a>.</p>
       </section>
 
-      <h2>Dental office to disbursements</h2>
+      <h2>Dental billing and these workflows</h2>
+      <p>I reconcile insurance, patient payments, and refunds in dental billing. The table is how that work lines up with the scenarios above. It is not a second list of projects.</p>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Dental office</th><th>Disbursements</th></tr>
+            <tr><th>Dental billing</th><th>These scenarios</th></tr>
           </thead>
           <tbody>
-            <tr><td>Denied or underpaid claim</td><td>Failed or short payment</td></tr>
-            <tr><td>EOB vs ledger</td><td>Processor record vs internal row</td></tr>
-            <tr><td>Wrong reimbursement</td><td>Wrong amount or status</td></tr>
-            <tr><td>Wrong patient or wrong procedure</td><td>Wrong recipient or misapplied payment</td></tr>
-            <tr><td>Repeat denial reason</td><td>Repeat failure code</td></tr>
-            <tr><td>Historical claim research</td><td>SQL on transaction history</td></tr>
-            <tr><td>Better claim workflow</td><td>Repeatable investigate and reprocess playbook</td></tr>
-            <tr><td>Call the payer</td><td>Coordinate ops, support, and engineering with a written finding</td></tr>
-            <tr><td>Check the chart before resubmitting</td><td>Confirm the key is not already settled before retry</td></tr>
+            <tr><td>Denied or underpaid claim</td><td>Failed payment, or a short pay with no denial</td></tr>
+            <tr><td>EOB vs ledger</td><td>Provider event vs the internal row</td></tr>
+            <tr><td>Wrong reimbursement</td><td>Amount mismatch</td></tr>
+            <tr><td>Wrong patient or wrong procedure</td><td>Wrong recipient, or cash on the wrong patient</td></tr>
+            <tr><td>Repeat denial reason</td><td>Repeat processor or return code</td></tr>
+            <tr><td>Claim research</td><td>SQL on the transaction history</td></tr>
+            <tr><td>Check the chart before resubmitting</td><td>Confirm the key is not already posted before a retry</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2>The kind of dental break</h2>
-      <p>The same shape, on a practice ledger. A name is not a result.</p>
-      <ul>
-        <li>Insurance underpay against the fee schedule.</li>
-        <li>A procedure downgraded: scaling and root planing submitted as one code and paid as another.</li>
-        <li>Payment posted to the wrong patient.</li>
-        <li>Claim never reached the payer, because the clearinghouse rejected it.</li>
-        <li>Duplicate post.</li>
-        <li>Payment applied to the wrong procedure.</li>
-        <li>Contractual write-off that does not match the fee schedule.</li>
-        <li>Production is not collections.</li>
-        <li>Insurance accounts-receivable aging.</li>
-        <li>Bank deposit against the practice-management total: timing, or money that is missing.</li>
-        <li>One payer is the denial-rate outlier.</li>
-        <li>Two records for the same name.</li>
-        <li>A month-end total that changes after close, from voids, refunds, or posting date versus service date.</li>
-      </ul>
-
-      <p>Dollar figures on this page are the synthetic cases already published with the drills.</p>
+      <p>Dollar figures on this page are the synthetic cases already in the project scripts.</p>
 
       <nav class="pager" aria-label="More">
-        <a href="payment-exceptions.html">[01] Payment exceptions</a>
-        <a href="choice-ops.html">[02] Choice ops</a>
-        <a href="patterns.html">[03] Patterns</a>
-        <a href="index.html">Cover</a>
+        <a href="payment-exceptions.html">[01] Reconciliation</a>
+        <a href="choice-ops.html">[02] Disbursements</a>
+        <a href="patterns.html">[03] Toolkit</a>
+        <a href="index.html">Portfolio</a>
       </nav>
     </main>
   </div>

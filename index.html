@@ -3,51 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Work — Haley Maes</title>
-  <meta name="description" content="Technical operations projects by Haley Maes: payment exceptions, disbursement drills, and reusable investigation patterns. All data is synthetic.">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <title>Technical Operations Portfolio — Haley Maes</title>
+  <meta name="description" content="Python and SQL projects for investigating payment failures, reconciling financial records, and planning controlled reprocessing. Built with synthetic data.">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="sheet">
     <header class="mast">
       <a class="name" href="index.html">Haley Maes</a>
       <nav aria-label="Sections">
-        <a href="index.html">Work</a>
-        <a href="problems.html">Breaks</a>
-        <a href="payment-exceptions.html">Ledger</a>
+        <a href="index.html">Portfolio</a>
+        <a href="payment-exceptions.html">Reconciliation</a>
         <a href="choice-ops.html">Disbursements</a>
-        <a href="patterns.html">Patterns</a>
+        <a href="patterns.html">Toolkit</a>
+        <a href="problems.html">Playbook</a>
       </nav>
       <p>Technical operations</p>
     </header>
 
     <div class="hero">
       <div>
-        <p class="eyebrow"><span class="mark" aria-hidden="true"></span>Billing, payments, reconciliation</p>
-        <h1 class="cover">Work.</h1>
-        <p class="deck">Billing discrepancies, payment failures, and the checks I run before anyone retries the money.</p>
+        <p class="eyebrow"><span class="mark" aria-hidden="true"></span>Python, SQL, synthetic data</p>
+        <h1 class="cover">Technical Operations Portfolio</h1>
+        <p class="deck">Python and SQL projects for investigating payment failures, reconciling financial records, and planning controlled reprocessing. Built with synthetic data.</p>
       </div>
 
       <nav class="toc" aria-label="Contents">
       <a href="payment-exceptions.html">
         <span class="idx">[01]</span>
-        <strong>Payment exceptions</strong>
-        <em>Dental billing ledger</em>
+        <strong>Reconciliation</strong>
+        <em>Duplicate posts, short pays, a plan that skips posted keys</em>
       </a>
       <a href="choice-ops.html">
         <span class="idx">[02]</span>
-        <strong>Choice ops</strong>
-        <em>Failed disbursements</em>
+        <strong>Disbursements</strong>
+        <em>Did this disbursement already move, or is it safe to send again?</em>
       </a>
       <a href="patterns.html">
         <span class="idx">[03]</span>
-        <strong>Pattern library</strong>
-        <em>Four files, five checks</em>
+        <strong>Toolkit</strong>
+        <em>Five examples, one project structure</em>
       </a>
       <a href="problems.html">
         <span class="idx">[04]</span>
-        <strong>The same break</strong>
-        <em>Ten exception types</em>
+        <strong>Playbook</strong>
+        <em>Ten payment exception scenarios</em>
       </a>
       </nav>
     </div>
@@ -56,10 +56,10 @@
       <article class="card feature band bleed">
         <header>
           <p class="idx">[01]</p>
-          <h2><a href="payment-exceptions.html">Payment exceptions</a></h2>
-          <p class="kicker">Dental billing ledger</p>
+          <h2><a href="payment-exceptions.html">Dental Payment Reconciliation</a></h2>
+          <p class="kicker">Which open dollars are real misses, and which retry would charge someone twice?</p>
         </header>
-        <p>Duplicates, short pays, cash on the wrong patient, and a retry that will not send a settled key again.</p>
+        <p>Investigate duplicate postings, underpayments, and misapplied payments using Python and SQLite. Build a reprocessing plan that excludes payment keys already posted.</p>
         <div class="push">
           <dl class="stats">
             <div><dt>Claims</dt><dd>159</dd></div>
@@ -73,41 +73,41 @@
       <article class="card">
         <header>
           <p class="idx">[02]</p>
-          <h2><a href="choice-ops.html">Choice ops</a></h2>
-          <p class="kicker">Disbursement drills</p>
+          <h2><a href="choice-ops.html">Disbursement Investigation &amp; Retry Controls</a></h2>
+          <p class="kicker">Did this disbursement already move, or is it safe to send again?</p>
         </header>
-        <p>Eight causes on nine rows. A reprocess guard, a batch file, and webhook labels. The plan is not a payment.</p>
+        <p>Independent practice project. Compare transaction records with webhook events, reconcile a client batch, and identify which attempts qualify for a reprocessing plan.</p>
         <div class="push">
-          <a class="btn" href="choice-ops.html">Read the drills</a>
+          <a class="btn" href="choice-ops.html">Read the case</a>
         </div>
       </article>
 
       <article class="card">
         <header>
           <p class="idx">[03]</p>
-          <h2><a href="patterns.html">Patterns</a></h2>
-          <p class="kicker">Copy for the next break</p>
+          <h2><a href="patterns.html">SQL &amp; Python Operations Toolkit</a></h2>
+          <p class="kicker">What do I copy the next time a number does not tie?</p>
         </header>
-        <p>Investigate, repair, reconcile, classify, variance. Same four files each time. Standard library and sqlite only.</p>
+        <p>Five reusable examples for transaction investigation, retry planning, reconciliation, error classification, and variance analysis.</p>
         <div class="push">
-          <a class="btn" href="patterns.html">Open the library</a>
+          <a class="btn" href="patterns.html">Open the toolkit</a>
         </div>
       </article>
 
       <article class="card">
         <header>
           <p class="idx">[04]</p>
-          <h2><a href="problems.html">The same break</a></h2>
-          <p class="kicker">Ten exception types</p>
+          <h2><a href="problems.html">Payment Exception Playbook</a></h2>
+          <p class="kicker">Ten scenarios</p>
         </header>
-        <p>Failed payments, short pays, returns, and two reports that do not tie. The ledger and the disbursement drills catch the same kinds of breaks.</p>
+        <p>Ten payment exception scenarios connecting dental billing experience with technical operations workflows.</p>
         <div class="push">
-          <a class="btn" href="problems.html">Read the ten</a>
+          <a class="btn" href="problems.html">Read the scenarios</a>
         </div>
       </article>
     </section>
 
-    <p class="note">Run from the repo root with Python 3. No packages. No live processor.</p>
+    <p class="note">These synthetic examples show how I would investigate failed payments in a technical operations role. I work in dental billing. I built these practice projects for this portfolio. Run them from the repo root with Python 3. No packages. No live processor.</p>
 
     <footer class="site-foot">
       <p>All data is synthetic.</p>

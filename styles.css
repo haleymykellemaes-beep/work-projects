@@ -123,12 +123,17 @@ a:focus-visible {
   margin-top: 0.4rem;
 }
 
+.hero > *,
+.grid > * {
+  min-width: 0;
+}
+
 .cover {
   margin: 0;
   max-width: 100%;
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(4.8rem, 20cqi, 10.5rem);
+  font-size: clamp(2.15rem, 6.4cqi, 4.2rem);
   line-height: 0.78;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -220,7 +225,7 @@ a:focus-visible {
   max-width: 100%;
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(2.4rem, 8cqi, 4.4rem);
+  font-size: clamp(1.85rem, 5.2cqi, 3.15rem);
   line-height: 0.84;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -592,7 +597,7 @@ code { font-family: var(--mono); font-size: 0.92em; }
 }
 
 @media (max-width: 700px) {
-  .cover { font-size: clamp(3.5rem, 22cqi, 4.6rem); }
+  .cover { font-size: clamp(1.85rem, 9.5cqi, 2.35rem); }
 
   .question { font-size: clamp(1.85rem, 11cqi, 2.55rem); }
 

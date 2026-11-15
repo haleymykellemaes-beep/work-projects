@@ -1,6 +1,6 @@
-# Choice Digital ops drills
+# Disbursement investigation and retry controls
 
-Synthetic payment-operations drills for a Technical Operations Manager interview. I can run these from the portfolio folder and talk through the output. They use made-up clients, recipient tokens, and trace numbers.
+Independent practice project. These synthetic examples show how I would investigate failed payments in a technical operations role. I can run them from the repo root and talk through the output. They use made-up clients, recipient tokens, and trace numbers.
 
 **Synthetic data only. I do not point these scripts at production, a real SFTP drop, or a live processor. There is no API key, no account number, and no call out to the network.**
 
@@ -8,7 +8,7 @@ The clock is frozen at `2026-11-15T17:00:00Z` so the pending window stays put be
 
 ## How I run them
 
-From `/Users/haley/WGU/portfolio`:
+From the repo root:
 
 ```bash
 python3 choice-ops/python/seed.py

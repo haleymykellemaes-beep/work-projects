@@ -1,15 +1,16 @@
-# Pattern library
+# SQL and Python operations toolkit
 
-Every problem gets the same four files:
+Each example has the same structure:
 
 1. `README.md` — the question, the inputs, the control, and how to run.
 2. `sql/query.sql` — the check.
 3. `python/run.py` — load a few synthetic rows, run the check, print a short result, exit 0.
-4. The rows themselves, written in the script.
+
+The rows themselves are written in the script.
 
 Python 3 standard library and sqlite only. No packages. No network.
 
-These are skeletons I can copy. They are not the full payment-exception ledger or the Choice ops drills.
+These are practice examples for this portfolio. They are not the dental payment ledger or the disbursement project.
 
 ## When I use each one
 
@@ -21,7 +22,7 @@ These are skeletons I can copy. They are not the full payment-exception ledger o
 | [classify](classify/) | A processor code, return code, or webhook needs an action label: retry, do not retry, fix data, wait, or escalate. Nothing is sent. |
 | [variance](variance/) | A business total does not tie: collections, fees, or hours. Flag rows outside a tolerance and print the dollars. |
 
-Choice Digital work lands on the first four: failed payments, a SQL investigation, a safe reprocess, duplicates, webhooks, and batch files. A number that does not tie, an exception queue, or a before/after variance can be any of them. Variance is the one I reach for when the unit is a week, a fee, or a shift rather than a payment id.
+These synthetic examples show how I would investigate failed payments in a technical operations role. Investigation, a safe reprocess, a two-source reconcile, and a code label are the payment checks. Variance is the one I use when the unit is a week, a fee, or a shift rather than a payment id. It compares expected dollars with actual dollars. It does not compute a failure rate.
 
 ## Run
 

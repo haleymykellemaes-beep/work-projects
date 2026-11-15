@@ -3,52 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Payment exceptions — Haley Maes</title>
-  <meta name="description" content="A synthetic dental billing week: duplicates, short pays, misapplied cash, and a reprocess plan that does not create a payment.">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <title>Dental Payment Reconciliation — Haley Maes</title>
+  <meta name="description" content="Investigate duplicate postings, underpayments, and misapplied payments using Python and SQLite. The reprocessing plan excludes payment keys already posted. Synthetic data.">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="sheet">
     <header class="mast">
       <a class="name" href="index.html">Haley Maes</a>
       <nav aria-label="Sections">
-        <a href="index.html">Work</a>
-        <a href="problems.html">Breaks</a>
-        <a href="payment-exceptions.html">Ledger</a>
+        <a href="index.html">Portfolio</a>
+        <a href="payment-exceptions.html">Reconciliation</a>
         <a href="choice-ops.html">Disbursements</a>
-        <a href="patterns.html">Patterns</a>
+        <a href="patterns.html">Toolkit</a>
+        <a href="problems.html">Playbook</a>
       </nav>
       <p>Technical operations</p>
     </header>
 
     <main class="case">
-      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[01] Payment exceptions</p>
-      <h1 class="question">Which open dollars are real misses, and which retry would charge someone twice?</h1>
-      <p class="lede">I reconcile insurance, patient cards, ACH, checks, and refunds. The miss is rarely “the claim is open.” It is a trace posted twice, a card marked failed after the webhook settled, cash on the wrong patient, or a short pay with no denial.</p>
+      <p class="eyebrow"><span class="mark" aria-hidden="true"></span>[01] Reconciliation</p>
+      <h1 class="question">Dental Payment Reconciliation</h1>
+      <p class="lede">Which open dollars are real misses, and which retry would charge someone twice?</p>
 
-      <h2>What the code does</h2>
-      <p><code>seed.py</code> builds one synthetic dental week and the SQLite ledger. <code>investigate.py</code> prints the exception queue. <code>reprocess_plan.py</code> stays a dry run until <code>--execute</code>.</p>
-      <p>A patient card or ACH retry is planned only when that idempotency key has never been posted. An insurance short pay is an appeal, not a card retry. <code>--execute</code> writes a plan row. It does not create a payment.</p>
+      <h2>What I built</h2>
+      <p>I built this practice project for this portfolio. <code>seed.py</code> loads one synthetic dental week into SQLite. <code>sql/exceptions.sql</code> is the queue: duplicate ERA or card posts, cash on the wrong patient, an insurance short pay with no denial, a refund larger than the original payment, and the attempt-level blocks. <code>investigate.py</code> prints that queue and writes <code>exception_queue.csv</code>. It does not change payments. <code>reprocess_plan.py</code> is a dry run that writes a plan file. <code>--execute</code> inserts a row into <code>reprocess_queue</code> with status <code>planned</code> and does not create a second payment. The script checks the idempotency key again before it writes, and it stops if the posted-payment count changes.</p>
+      <p>A patient card or ACH attempt is eligible only when the key was never posted, no refund is requested or issued on the claim, the attempt is pending or failed and older than 3 days, and the amount equals the open balance. An insurance short pay stays on an appeal list. It is not a card retry.</p>
 
       <section class="band">
-      <h2>The week</h2>
-      <p>159 claims. 140 fully reconciled and off the queue.</p>
+      <h2>Sample output</h2>
+      <p>159 synthetic claims; 140 fully reconciled; $193 across two attempts eligible for a reprocessing plan.</p>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Break</th><th class="num">Amount</th></tr>
+            <tr><th>Exception</th><th>Evidence</th><th class="num">Amount</th></tr>
           </thead>
           <tbody>
-            <tr><td>Duplicate ERA or card posts</td><td class="num">$225</td></tr>
-            <tr><td>Card marked failed after the webhook settled</td><td class="num">$82</td></tr>
-            <tr><td>Decline posted by hand</td><td class="num">$96</td></tr>
-            <tr><td>Cash on the wrong patient</td><td class="num">$155</td></tr>
-            <tr><td>Insurance short pay with no denial</td><td class="num">$90</td></tr>
-            <tr><td>Refund larger than the payment</td><td class="num">$25</td></tr>
+            <tr><td>Duplicate ERA or card posts</td><td>The same trace or auth is posted twice</td><td class="num">$225</td></tr>
+            <tr><td>Card marked failed after the webhook settled</td><td>Attempt says failed; the same key is already posted</td><td class="num">$82</td></tr>
+            <tr><td>Decline posted by hand</td><td>The card declined, and a payment was still posted</td><td class="num">$96</td></tr>
+            <tr><td>Cash on the wrong patient</td><td>The payment sits on the claim under a different patient</td><td class="num">$155</td></tr>
+            <tr><td>Insurance short pay with no denial</td><td>ERA is below the contracted insurance amount, and there is no denial code</td><td class="num">$90</td></tr>
+            <tr><td>Refund larger than the original payment</td><td>The refund amount exceeds the payment it points at</td><td class="num">$25</td></tr>
           </tbody>
         </table>
       </div>
-      <p>A blind retry of attempts whose key is already posted would resend $258. The safe reprocess plan is $193 across 2 attempts.</p>
+      <p>A blind retry of unsuccessful attempts whose key is already posted would resend $258. That is simulated exposure, not money saved.</p>
+      <p>Reprocessing plan: $193 across two attempts, eligible because the key was never posted, no refund is open, and the amount matches the open balance. Insurance short pays stay on an appeal list, not a card retry.</p>
       </section>
 
       <h2>How to run</h2>
@@ -60,10 +61,10 @@ python3 payment-exceptions/python/reprocess_plan.py</code></pre>
       <p><a href="payment-exceptions/README.md">Project notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/payment-exceptions">Source on GitHub</a></p>
 
       <nav class="pager" aria-label="More">
-        <a href="choice-ops.html">[02] Choice ops</a>
-        <a href="patterns.html">[03] Patterns</a>
-        <a href="problems.html">The same break</a>
-        <a href="index.html">Cover</a>
+        <a href="choice-ops.html">[02] Disbursements</a>
+        <a href="patterns.html">[03] Toolkit</a>
+        <a href="problems.html">Playbook</a>
+        <a href="index.html">Portfolio</a>
       </nav>
     </main>
   </div>
