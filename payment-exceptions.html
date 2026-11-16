@@ -32,8 +32,12 @@
       <p>A patient card or ACH attempt is eligible only when the key was never posted, no refund is requested or issued on the claim, the attempt is pending or failed and older than 3 days, and the amount equals the open balance. An insurance short pay stays on an appeal list. It is not a card retry.</p>
 
       <section class="band">
+      <h2>From the job</h2>
+      <p>Card-processing fees were 2.4% of card volume. I led the payment-platform rollout at the dental practice. Fees fell to under 1%. That is money kept on the same card payments. The scripts on this page did not produce that cut.</p>
+      </section>
+
       <h2>Sample output</h2>
-      <p>159 synthetic claims; 140 fully reconciled; $193 across two attempts eligible for a reprocessing plan.</p>
+      <p>Synthetic ledger, separate from the fee change above. 159 synthetic claims; 140 fully reconciled; $193 across two attempts eligible for a reprocessing plan.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -51,14 +55,13 @@
       </div>
       <p>A blind retry of unsuccessful attempts whose key is already posted would resend $258. That is simulated exposure, not money saved.</p>
       <p>Reprocessing plan: $193 across two attempts, eligible because the key was never posted, no refund is open, and the amount matches the open balance. Insurance short pays stay on an appeal list, not a card retry.</p>
-      </section>
 
       <h2>How to run</h2>
       <p>From the repo root:</p>
       <pre><code>python3 payment-exceptions/python/seed.py
 python3 payment-exceptions/python/investigate.py
 python3 payment-exceptions/python/reprocess_plan.py</code></pre>
-      <p>Python 3 standard library only. The figures above are the synthetic week, not a live ledger.</p>
+      <p>Python 3 standard library only. The sample-output figures are the synthetic week, not a live ledger. The fee change is the payment-platform rollout at the practice.</p>
       <p><a href="payment-exceptions/README.md">Project notes</a> · <a href="https://github.com/haleymykellemaes-beep/work-projects/tree/main/payment-exceptions">Source on GitHub</a></p>
 
       <nav class="pager" aria-label="More">
